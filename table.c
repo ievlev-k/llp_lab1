@@ -1,6 +1,4 @@
-//
-// Created by KuPuK on 20.02.2023.
-//
+
 #include "include/table_include.h"
 int32_t column_length_varchar(const struct column* list, const size_t length, const char* name) {
     int32_t idx = 0;

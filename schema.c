@@ -1,6 +1,4 @@
-//
-// Created by KuPuK on 20.02.2023.
-//
+
 #include "include/schema.h"
 
 struct schema* schema_create() {

@@ -1,6 +1,3 @@
-//
-// Created by KuPuK on 20.02.2023.
-//
 
 #include "include/file.h"
 

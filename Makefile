@@ -1,0 +1,31 @@
+all: main
+
+main: main.o schema.o database.o table.o file.o data_types.o
+	gcc main.o schema.o database.o table.o file.o data_types.o -o main -std=c99
+
+
+main.o:
+	gcc -c C:\Users\KuPuK\CLionProjects\LLP1\main.c  -std=c99
+
+
+schema.o:
+	gcc -c schema.c  -std=c99
+
+file.o: data_types.o
+	gcc -c file.c -std=c99
+
+data_types.o:
+	gcc -c data_types.c -std=c99
+
+database.o:
+	gcc -c database.c -std=c99
+
+table.o:
+	gcc -c table.c -std=c99
+
+execute:
+	./main
+
+clean:
+	del -rf *.o; \
+	del main.exe

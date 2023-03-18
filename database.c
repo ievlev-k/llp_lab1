@@ -1,9 +1,4 @@
 #include "include/database_include.h"
-
-
-
-
-
 #define MAX_NAME_LENGTH 20
 
 void db_close(struct database* database) {
