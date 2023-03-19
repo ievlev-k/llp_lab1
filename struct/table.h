@@ -1,16 +1,13 @@
-//
-// Created by KuPuK on 14.03.2023.
-//
 
-#ifndef LLP1_TABLE_STRUCT_H
-#define LLP1_TABLE_STRUCT_H
+#ifndef LLP1_TABLE_H
+#define LLP1_TABLE_H
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "database_struct.h"
+#include "database.h"
 
 enum data_type {
     INTEGER = 0,
@@ -47,7 +44,7 @@ struct table_header {
     char name[20];
 
     struct database* database;
-    struct table_struct* relation;
+    struct table* table;
     struct schema schema;
 
     uint32_t page_number_first;
@@ -56,8 +53,8 @@ struct table_header {
     uint32_t real_number;
 };
 
-struct table_struct {
-    struct table_header* relation_header;
+struct table {
+    struct table_header* table_header;
     struct schema* schema;
 };
 
@@ -67,9 +64,9 @@ struct row_header {
 
 struct row {
     struct row_header* row_header;
-    struct table_struct* relation;
+    struct table* table;
     void** data;
 };
 
 
-#endif //LLP1_TABLE_STRUCT_H
+#endif //LLP1_TABLE_H

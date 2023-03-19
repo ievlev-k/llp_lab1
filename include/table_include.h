@@ -1,6 +1,3 @@
-//
-// Created by KuPuK on 18.03.2023.
-//
 
 
 #ifndef LLP1_TABLE_INCLUDE_H
@@ -12,7 +9,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "../struct/table_struct.h"
+#include "../struct/table.h"
 #include "../struct/query.h"
 #include "file.h"
 
@@ -23,7 +20,7 @@ void attribute_add(struct row* row, char* name, enum data_type content_type, voi
 
 int32_t column_get_offset(const struct column *list, char *name, const size_t length);
 
-struct row* row_create(struct table_struct* relation);
+struct row* row_create(struct table* table);
 
 
 void row_close(struct row* row);

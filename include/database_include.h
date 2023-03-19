@@ -10,7 +10,7 @@
 #include "schema.h"
 
 
-#include "../struct/database_struct.h"
+#include "../struct/database.h"
 #include "../struct/query.h"
 
 
@@ -26,11 +26,9 @@ enum query_types;
 bool is_enough_space(struct page_header* page_header, uint32_t required);
 
 
-bool is_enough_space(struct page_header* page_header, uint32_t required);
-
-struct page_header* page_create(struct database_header* database_header, struct table_header* relation_header);
+struct page_header* page_create(struct database_header* database_header, struct table_header* table_header);
 struct page_header* page_add_real(struct database_header* database_header);
-struct page_header* page_add(struct table_header* relation_header, struct database_header* database_header);
+struct page_header* page_add(struct table_header* table_header, struct database_header* database_header);
 
 struct database* db_get(const char *const file, const enum database_state state);
 struct database* db_create_in_file(const char *const file);
@@ -38,13 +36,13 @@ struct database* db_get_from_file(const char *const file);
 
 void db_close(struct database* database);
 
-struct table_struct* table_create(struct schema* schema, const char* relation_name, struct database*  database);
-struct table_struct* table_get(const char *const relation_name, struct database*  database);
+struct table* table_create(struct schema* schema, const char* table_name, struct database*  database);
+struct table* table_get(const char *const table_name, struct database*  database);
 
-void relation_close(struct table_struct* relation);
+void table_close(struct table* table);
 
-struct query* query_make(enum query_types operation, struct table_struct* relations, char* columns[], void* vals[], int32_t cnt);
-struct query_join* query_join_make(struct table_struct* left, struct table_struct* right, char* left_column, char* right_column);
+struct query* query_make(enum query_types operation, struct table* table, char* columns[], void* vals[], int32_t cnt);
+struct query_join* query_join_make(struct table* left, struct table* right, char* left_column, char* right_column);
 
 void query_execute(struct query *query, bool show_output);
 void query_join_execute(struct query_join* query);

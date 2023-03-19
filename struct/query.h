@@ -1,11 +1,8 @@
-//
-// Created by KuPuK on 14.03.2023.
-//
 
 #ifndef LLP1_QUERY_H
 #define LLP1_QUERY_H
 #include <inttypes.h>
-#include "table_struct.h"
+#include "table.h"
 enum query_types {
     SELECT = 0,
     UPDATE,
@@ -17,12 +14,12 @@ struct query {
     enum query_types operation;
     int32_t number;
     void** value;
-    struct table_struct* relation;
+    struct table* table;
 };
 
 struct query_join {
-    struct table_struct* left;
-    struct table_struct* right;
+    struct table* left;
+    struct table* right;
     char* left_column;
     char* right_column;
 };

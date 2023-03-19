@@ -60,9 +60,9 @@ uint32_t column_presence_count(const struct column* list, const size_t length, c
 }
 
 
-struct schema* schema_add_column(struct schema* schema, const char* name, enum data_type content_type) {
+struct schema* schema_add_column(struct schema* schema, const char* name, enum data_type data_type) {
     if (column_presence_count(schema->start, schema->count, name) == 0) {
-        column_add(schema, name, content_type);
+        column_add(schema, name, data_type);
         schema->count++;
         schema->length += schema->end->size;
         return schema;
@@ -72,9 +72,9 @@ struct schema* schema_add_column(struct schema* schema, const char* name, enum d
     }
 }
 
-struct schema* schema_add_column_varchar(struct schema* schema, const char* name, enum data_type content_type, uint16_t size) {
+struct schema* schema_add_column_varchar(struct schema* schema, const char* name, enum data_type data_type, uint16_t size) {
     if (column_presence_count(schema->start, schema->count, name) == 0) {
-        column_add_varchar(schema, name, content_type, size);
+        column_add_varchar(schema, name, data_type, size);
         schema->count++;
         schema->length += schema->end->size;
         return schema;

@@ -15,8 +15,8 @@ int32_t column_length_varchar(const struct column* list, const size_t length, co
 
 
 void attribute_add(struct row* row, char* name, enum data_type content_type, void* value) {
-    relation_read_columns(row->relation->relation_header->database->source_file, row->relation); //нужно для таблиц созданных до
-    int32_t offset = column_get_offset(row->relation->schema->start, name, row->relation->schema->count);
+    table_read_columns(row->table->table_header->database->source_file, row->table); //нужно для таблиц созданных до
+    int32_t offset = column_get_offset(row->table->schema->start, name, row->table->schema->count);
     if (offset != -1) {
         switch (content_type) {
             case INTEGER:
@@ -27,7 +27,7 @@ void attribute_add(struct row* row, char* name, enum data_type content_type, voi
                 break;
             case VARCHAR:
                 varchar_add(row, *((char **) value), offset,
-                            column_length_varchar(row->relation->schema->start, row->relation->schema->count,
+                            column_length_varchar(row->table->schema->start, row->table->schema->count,
                                                   name));
                 break;
             case DOUBLE:
@@ -54,12 +54,12 @@ int32_t column_get_offset(const struct column *list, char *name, const size_t le
     else return -1;
 }
 
-struct row* row_create(struct table_struct* relation) {
+struct row* row_create(struct table* table) {
     struct row* new = malloc(sizeof(struct row));
     struct row_header* row_header = malloc(sizeof(struct row_header));
     row_header->is_available = true;
-    new->relation = relation;
-    new->data = malloc(relation->schema->length);
+    new->table = table;
+    new->data = malloc(table->schema->length);
     new->row_header = row_header;
     return new;
 }
@@ -71,8 +71,8 @@ void row_close(struct row* row) {
 }
 
 void row_insert(struct row* row) {
-    uint32_t page_number = row->relation->relation_header->page_number_last;
-    enum file_status result = row_write_to_page(row->relation->relation_header->database->source_file,
+    uint32_t page_number = row->table->table_header->page_number_last;
+    enum file_status result = row_write_to_page(row->table->table_header->database->source_file,
                                                 page_number, row);
     if (result != OK) {
         printf("Could not insert row");
@@ -85,19 +85,19 @@ void row_select(struct query *query, bool show_output) {
     char name[MAX_NAME_LENGTH];
     uint16_t size;
 
-    for (size_t i = 0; i < query->relation->schema->count; i++) {
-        if (strcmp(query->relation->schema->start[i].name, query->name[0]) == 0) {
+    for (size_t i = 0; i < query->table->schema->count; i++) {
+        if (strcmp(query->table->schema->start[i].name, query->name[0]) == 0) {
             is_column_present = true;
-            strncpy(name, query->relation->schema->start[i].name, MAX_NAME_LENGTH);
-            size = query->relation->schema->start[i].size;
-            data_type = query->relation->schema->start[i].data_type;
+            strncpy(name, query->table->schema->start[i].name, MAX_NAME_LENGTH);
+            size = query->table->schema->start[i].size;
+            data_type = query->table->schema->start[i].data_type;
             break;
         }
     }
     if (is_column_present) {
-        uint32_t offset = column_get_offset(query->relation->schema->start,
-                                            query->name[0], query->relation->schema->count);
-        select_execute(query->relation->relation_header->database->source_file, query->relation, offset, size,
+        uint32_t offset = column_get_offset(query->table->schema->start,
+                                            query->name[0], query->table->schema->count);
+        select_execute(query->table->table_header->database->source_file, query->table, offset, size,
                        query->value[0], data_type, query->number, show_output);
     } else printf("Attribute for this query does not exist\n");
 }
@@ -112,17 +112,17 @@ void row_update(struct query *query, bool show_output) {
     uint16_t size_one = 0;
     uint16_t size_two = 0;
 
-    for (size_t i = 0; i < query->relation->schema->count; i++) {
-        if (strcmp(query->relation->schema->start[i].name, query->name[0]) == 0) {
+    for (size_t i = 0; i < query->table->schema->count; i++) {
+        if (strcmp(query->table->schema->start[i].name, query->name[0]) == 0) {
             is_column_present_one = true;
-            type_one = query->relation->schema->start[i].data_type;
-            strncpy(name_one, query->relation->schema->start[i].name, MAX_NAME_LENGTH);
-            size_one = query->relation->schema->start[i].size;
-        } else if (strcmp(query->relation->schema->start[i].name, query->name[1]) == 0) {
+            type_one = query->table->schema->start[i].data_type;
+            strncpy(name_one, query->table->schema->start[i].name, MAX_NAME_LENGTH);
+            size_one = query->table->schema->start[i].size;
+        } else if (strcmp(query->table->schema->start[i].name, query->name[1]) == 0) {
             is_column_present_two = true;
-            type_two = query->relation->schema->start[i].data_type;
-            strncpy(name_two, query->relation->schema->start[i].name, MAX_NAME_LENGTH);
-            size_two = query->relation->schema->start[i].size;
+            type_two = query->table->schema->start[i].data_type;
+            strncpy(name_two, query->table->schema->start[i].name, MAX_NAME_LENGTH);
+            size_two = query->table->schema->start[i].size;
         }
         if (is_column_present_one && is_column_present_two) {
             break;
@@ -130,10 +130,10 @@ void row_update(struct query *query, bool show_output) {
     }
 
     if (is_column_present_one && is_column_present_two) {
-        uint32_t offset_one = column_get_offset(query->relation->schema->start,
-                                                name_one, query->relation->schema->count);
-        uint32_t offset_two = column_get_offset(query->relation->schema->start,
-                                                name_two, query->relation->schema->count);
+        uint32_t offset_one = column_get_offset(query->table->schema->start,
+                                                name_one, query->table->schema->count);
+        uint32_t offset_two = column_get_offset(query->table->schema->start,
+                                                name_two, query->table->schema->count);
         struct query_params* query_one = malloc(sizeof(struct query_params));
         struct query_params* query_two = malloc(sizeof(struct query_params));
 
@@ -151,7 +151,7 @@ void row_update(struct query *query, bool show_output) {
         strncpy(query_two->name, "", MAX_NAME_LENGTH);
         strncpy(query_two->name, name_two, MAX_NAME_LENGTH);
 
-        update_execute(query->relation->relation_header->database->source_file, query->relation, query_one,
+        update_execute(query->table->table_header->database->source_file, query->table, query_one,
                        query_two, query->value, show_output);
 
         free(query_one);
@@ -166,12 +166,12 @@ void row_delete(struct query *query, bool show_output) {
     char name[MAX_NAME_LENGTH];
     uint16_t column_size;
 
-    for (size_t i = 0; i < query->relation->schema->count; i++) {
-        if (strcmp(query->relation->schema->start[i].name, query->name[0]) == 0) {
+    for (size_t i = 0; i < query->table->schema->count; i++) {
+        if (strcmp(query->table->schema->start[i].name, query->name[0]) == 0) {
             is_column_present = true;
-            column_size = query->relation->schema->start[i].size;
-            data = query->relation->schema->start[i].data_type;
-            strncpy(name, query->relation->schema->start[i].name, MAX_NAME_LENGTH);
+            column_size = query->table->schema->start[i].size;
+            data = query->table->schema->start[i].data_type;
+            strncpy(name, query->table->schema->start[i].name, MAX_NAME_LENGTH);
             break;
         }
     }
@@ -179,7 +179,7 @@ void row_delete(struct query *query, bool show_output) {
     if (is_column_present) {
         struct query_params* query_params = malloc(sizeof(struct query_params));
 
-        uint32_t offset = column_get_offset(query->relation->schema->start, name, query->relation->schema->count);
+        uint32_t offset = column_get_offset(query->table->schema->start, name, query->table->schema->count);
 
         query_params->size = column_size;
         query_params->data_type = data;
@@ -188,7 +188,7 @@ void row_delete(struct query *query, bool show_output) {
         strncpy(query_params->name, "", MAX_NAME_LENGTH);
         strncpy(query_params->name, name, MAX_NAME_LENGTH);
 
-        delete_execute(query->relation->relation_header->database->source_file, query->relation, query_params, query->value[0]);
+        delete_execute(query->table->table_header->database->source_file, query->table, query_params, query->value[0]);
 
         free(query_params);
     } else printf("Attribute is not present\n");

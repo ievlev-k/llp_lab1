@@ -1,6 +1,3 @@
-//
-// Created by KuPuK on 20.02.2023.
-//
 
 #ifndef LLP1_SCHEMA_H
 #define LLP1_SCHEMA_H
@@ -11,7 +8,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "../struct/table_struct.h"
+#include "../struct/table.h"
 #include "../struct/query.h"
 #include "file.h"
 
@@ -34,8 +31,8 @@ int32_t column_length_varchar(const struct column* list, const size_t length, co
 
 
 struct schema* schema_create();
-struct schema* schema_add_column(struct schema* schema, const char* name, enum data_type content_type);
-struct schema* schema_add_column_varchar(struct schema* schema, const char* name, enum data_type content_type, uint16_t size);
+struct schema* schema_add_column(struct schema* schema, const char* name, enum data_type data_type);
+struct schema* schema_add_column_varchar(struct schema* schema, const char* name, enum data_type data_type, uint16_t size);
 
 void schema_close(struct schema* schema);
 

@@ -22,7 +22,7 @@ struct database* db_create_in_file(const char *const file) {
     struct database_header* new = malloc(sizeof(struct database_header));
     strncpy(new->name, "", 20);
     strncpy(new->name, file, strlen(file));
-    new->relation_count = 0;
+    new->table_count = 0;
     new->page_count = 0;
 //    new->page_size = DEFAULT_PAGE_SIZE_BYTES;
 
@@ -72,68 +72,68 @@ struct database* db_get(const char *const file, const enum database_state state)
 
 
 
-struct table_struct* table_create(struct schema* schema, const char* relation_name, struct database*  database) {
+struct table* table_create(struct schema* schema, const char* table_name, struct database*  database) {
     struct table_header* header = malloc(sizeof(struct table_header));
-    if (is_relation_present(database->source_file, database->database_header->relation_count, relation_name, header)) {
+    if (is_table_present(database->source_file, database->database_header->table_count, table_name, header)) {
         printf("Can't create two relations with the same name");
         free(header);
         return NULL;
     }
-    struct table_struct* new = malloc(sizeof(struct table_struct));
+    struct table* new = malloc(sizeof(struct table));
     new->schema = schema;
 
-    struct table_header* relation_header = malloc(sizeof(struct table_header));
-    strncpy(relation_header->name, "", MAX_NAME_LENGTH);
-    strncpy(relation_header->name, relation_name, strlen(relation_name));
-    relation_header->page_number_first = 0;
-    relation_header->page_number_last = 0;
-    relation_header->database = database;
-    relation_header->relation = new;
-    relation_header->schema = *schema;
-    relation_header->page_count = 0;
-    relation_header->is_available = true;
+    struct table_header* table_header = malloc(sizeof(struct table_header));
+    strncpy(table_header->name, "", MAX_NAME_LENGTH);
+    strncpy(table_header->name, table_name, strlen(table_name));
+    table_header->page_number_first = 0;
+    table_header->page_number_last = 0;
+    table_header->database = database;
+    table_header->table = new;
+    table_header->schema = *schema;
+    table_header->page_count = 0;
+    table_header->is_available = true;
 
-    struct page_header* new_page = page_add(relation_header, database->database_header);
-    new->relation_header = relation_header;
+    struct page_header* new_page = page_add(table_header, database->database_header);
+    new->table_header = table_header;
 
-    database->database_header->relation_count++;
+    database->database_header->table_count++;
 
-    relation_header->real_number = database->database_header->relation_count;
+    table_header->real_number = database->database_header->table_count;
 
-    page_header_write_real(database->source_file, database->database_header, relation_header);
+    page_header_write_real(database->source_file, database->database_header, table_header);
 
     database_header_save_changes(database->source_file, database->database_header);
 
-    relation_page_write(database->source_file, new_page, new->schema);
+    table_page_write(database->source_file, new_page, new->schema);
 
     return new;
 }
 
-struct table_struct* table_get(const char *const relation_name, struct database* database) {
-    struct table_struct* new = malloc(sizeof(struct table_struct));
-    struct table_header* relation_header = malloc(sizeof(struct table_header));
+struct table* table_get(const char *const table_name, struct database* database) {
+    struct table* new = malloc(sizeof(struct table));
+    struct table_header* table_header = malloc(sizeof(struct table_header));
     struct schema* schema = malloc(sizeof(struct schema));
 
-    if (relation_header_read(database->source_file, relation_name, relation_header, database->database_header->relation_count) == OK) {
+    if (table_header_read(database->source_file, table_name, table_header, database->database_header->table_count) == OK) {
         new->schema = schema;
-        new->relation_header = relation_header;
-        relation_read_columns(database->source_file, new);
-        new->relation_header->database = database;
+        new->table_header = table_header;
+        table_read_columns(database->source_file, new);
+        new->table_header->database = database;
         return new;
     } else {
-        printf("Could not get table_struct\n");
+        printf("Could not get table\n");
         return NULL;
     }
 }
 
-void relation_close(struct table_struct* relation) {
+void table_close(struct table* table) {
     //free(created_relation->schema->start);
-    free(relation->relation_header);
+    free(table->table_header);
     //free(created_relation->schema);
-    free(relation);
+    free(table);
 }
 
-struct page_header* page_create(struct database_header* database_header, struct table_header* relation_header) {
+struct page_header* page_create(struct database_header* database_header, struct table_header* table_header) {
     struct page_header* new = malloc(sizeof (struct page_header));
     if (!new) {
         return NULL;
@@ -145,12 +145,12 @@ struct page_header* page_create(struct database_header* database_header, struct 
     new->remaining_space = 20;
     new->page_number = database_header->page_count;
 
-    if (!relation_header) {
-        strncpy(new->relation_name, "", MAX_RELATION_NAME_LENGTH);
+    if (!table_header) {
+        strncpy(new->table_name, "", MAX_TABLE_NAME_LENGTH);
     } else {
 //        new->real_number = table_header->real_number;
-        strncpy(new->relation_name, "", MAX_RELATION_NAME_LENGTH);
-        strncpy(new->relation_name, relation_header->name, MAX_RELATION_NAME_LENGTH);
+        strncpy(new->table_name, "", MAX_TABLE_NAME_LENGTH);
+        strncpy(new->table_name, table_header->name, MAX_TABLE_NAME_LENGTH);
     }
 
     return new;
@@ -180,24 +180,24 @@ struct page_header* page_add_real(struct database_header* database_header) {
     } else return NULL;
 }
 
-struct page_header* page_add(struct table_header* relation_header, struct database_header* database_header) {
+struct page_header* page_add(struct table_header* table_header, struct database_header* database_header) {
     database_header->page_count++;
-    relation_header->page_count++;
+    table_header->page_count++;
 
-    struct page_header* new = page_create(database_header, relation_header);
+    struct page_header* new = page_create(database_header, table_header);
 
     if (new) {
-        if (relation_header->page_number_last != 0) {
-            file_update_last_page(relation_header->database->source_file, relation_header->page_number_last,
+        if (table_header->page_number_last != 0) {
+            file_update_last_page(table_header->database->source_file, table_header->page_number_last,
                                   new->page_number);
         } else {
-            relation_header->page_number_first = new->page_number;
+            table_header->page_number_first = new->page_number;
         }
 
-        relation_header->page_number_last = new->page_number;
+        table_header->page_number_last = new->page_number;
 
-        if (relation_header->page_count != 1) {
-            relation_header_save_changes(database_header->database->source_file, relation_header);
+        if (table_header->page_count != 1) {
+            table_header_save_changes(database_header->database->source_file, table_header);
             database_header_save_changes(database_header->database->source_file, database_header);
         }
 
@@ -206,17 +206,17 @@ struct page_header* page_add(struct table_header* relation_header, struct databa
     return NULL;
 }
 
-struct query* query_make(enum query_types operation, struct table_struct* relations, char* columns[], void* vals[], int32_t cnt) {
+struct query* query_make(enum query_types operation, struct table* table, char* columns[], void* vals[], int32_t cnt) {
     struct query* new = malloc(sizeof(struct query));
     new->operation = operation;
     new->name = columns;
     new->value = vals;
     new->number = cnt;
-    new->relation = relations;
+    new->table = table;
     return new;
 }
 
-struct query_join* query_join_make(struct table_struct* left, struct table_struct* right, char* left_column, char* right_column) {
+struct query_join* query_join_make(struct table* left, struct table* right, char* left_column, char* right_column) {
     struct query_join* new = malloc(sizeof(struct query_join));
     new->left = left;
     new->right = right;
@@ -298,7 +298,7 @@ void query_join_execute(struct query_join* query) {
             strncpy(query_two->name, "", MAX_NAME_LENGTH);
             strncpy(query_two->name, name_two, MAX_NAME_LENGTH);
 
-            query_join(query->left->relation_header->database->source_file, query->left, query->right, query_one, query_two);
+            query_join(query->left-> table_header->database->source_file, query->left, query->right, query_one, query_two);
         }
 
         free(query_one);
