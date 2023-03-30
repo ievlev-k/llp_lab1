@@ -278,13 +278,14 @@ void select_test(){
 
 }
 
+
 void join_test(){
     struct database* db = db_get("db5.db", NEW);
     struct schema* test_schema = schema_create();
 
 
 
-    test_schema = schema_add_column(test_schema,"id", INTEGER);
+
     test_schema = schema_add_column_varchar(test_schema, "name", VARCHAR, 20);
     test_schema = schema_add_column(test_schema, "is_free", BOOLEAN);
     test_schema = schema_add_column(test_schema, "height", DOUBLE);
@@ -299,17 +300,8 @@ void join_test(){
     int32_t post_id[6] = {1,2,3,4,5,6};
 
 
-    clock_t  start;
-    clock_t finish;
 
-    for (size_t j = 0 ; j < 20; j ++){
-        attribute_add(row_test, "id", INTEGER, (void *)&j);
-        attribute_add(row_test, "name",VARCHAR,(void *) &names[j%5]);
-        attribute_add(row_test, "is_free", BOOLEAN, (void * ) &is_frees[j%2]);
-        attribute_add(row_test, "height", DOUBLE, (void *) &height[j%4]);
-        attribute_add(row_test, "post_id", INTEGER, (void *) & post_id[j%6]);
-        row_insert(row_test);
-    }
+
 
 
     struct schema* test_schema_name_post = schema_create();
@@ -328,9 +320,30 @@ void join_test(){
         row_insert(row_test1);
     }
 
-
     struct query_join* join = query_join_make(table, table_post, "post_id", "id");
-    query_join_execute(join);
+    clock_t  start;
+    clock_t finish;
+    for (size_t j=0; j<11; j++) {
+        for (size_t i=0; i<100 * j; i++) {
+            attribute_add(row_test, "name",VARCHAR,(void *) &names[i%5]);
+            attribute_add(row_test, "is_free", BOOLEAN, (void * ) &is_frees[i%2]);
+            attribute_add(row_test, "height", DOUBLE, (void *) &height[i%4]);
+            attribute_add(row_test, "post_id", INTEGER, (void *) & post_id[i%6]);
+            row_insert(row_test);
+        }
+
+
+        start = clock();
+        query_join_execute(join);
+        finish = clock();
+        double work_time = (double ) (finish - start)/CLOCKS_PER_SEC;
+        printf("JOIN from %d rows took %f sec\n", 1000*(j+1), work_time);
+
+    }
+
+
+
+
 
     query_join_close(join);
 
